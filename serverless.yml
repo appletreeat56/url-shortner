@@ -1,0 +1,60 @@
+service:
+  name: url-shortner
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-webpack
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: local
+  region: eu-west-1
+  apiKeys:
+    - url-shortner_${self:custom.stage}
+
+resources:
+  Resources:
+    ApiGatewayMethodIdVarGet:
+      Type: AWS::ApiGateway::Method
+      Properties:
+        HttpMethod: GET
+        ResourceId: {
+            Ref: ApiGatewayResourceIdVar
+        }
+        RestApiId: {
+            Ref: ApiGatewayRestApi
+        }
+        RequestParameters:
+          method.request.path.id: true
+        Integration:
+          RequestParameters:
+            integration.request.path.id: method.request.path.id
+          CacheNamespace: ApiGatewayMethodIdVarGetCacheNS
+          CacheKeyParameters:
+            - method.request.path.id      
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js 
+    includeModules: true
+  stage: ${opt:stage, self:provider.stage}
+functions:
+  shortenURL:
+    handler: handler.shortenURL
+    timeout: 900
+    events:
+      - http:
+          method: get
+          path: shortenURL
+          private: true
+  redirectURL:
+    handler: handler.redirectURL
+    timeout: 900
+    events:
+      - http:
+          method: get
+          path: /{id}
+          private: false     
+  
