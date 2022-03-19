@@ -62,3 +62,24 @@ export const searchS3Object = async (shortURL: string) => {
 
   return await s3Select(params);
 };
+
+export const searchS3ObjectCSV = async (shortURL: string) => {
+  const params: S3.SelectObjectContentRequest = {
+    Bucket: process.env.SHORT_URL_BUCKET,
+    Key: process.env.SHORT_URL_MASTER_FILE,
+    ExpressionType: "SQL",
+    Expression: `select url from s3object s where s.id = '${shortURL}'  limit 1`,
+    InputSerialization: {
+      CSV: {
+        FileHeaderInfo: "USE",
+        RecordDelimiter: "\n",
+        FieldDelimiter: ",",
+      },
+    },
+    OutputSerialization: {
+      CSV: {},
+    },
+  };
+
+  return await s3Select(params);
+};
